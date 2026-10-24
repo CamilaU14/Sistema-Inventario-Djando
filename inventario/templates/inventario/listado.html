@@ -1,0 +1,153 @@
+{% extends "inventario/base.html" %}
+
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <h1 class="h3 mb-0">{{ titulo }}</h1>
+
+    <a
+        href="{% url 'inventario:crear' modulo=modulo %}"
+        class="btn btn-primary"
+    >
+        Nuevo registro
+    </a>
+</div>
+
+<form method="get" class="d-flex flex-wrap gap-2 mb-4">
+    <input
+        type="search"
+        name="q"
+        value="{{ busqueda }}"
+        class="form-control w-auto flex-grow-1"
+        placeholder="Buscar por nombre, código o NIT según el módulo"
+        aria-label="Buscar registros"
+    >
+
+    <button type="submit" class="btn btn-primary">
+        Buscar
+    </button>
+
+    <a
+        href="{% url 'inventario:listado' modulo=modulo %}"
+        class="btn btn-outline-secondary"
+    >
+        Limpiar
+    </a>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                {% if modulo == "productos" %}
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>Categoría</th>
+                    <th>Proveedor</th>
+                    <th>Precio unitario</th>
+                    <th>Stock</th>
+                {% elif modulo == "proveedores" %}
+                    <th>NIT</th>
+                    <th>Nombre</th>
+                    <th>Teléfono</th>
+                    <th>Correo</th>
+                    <th>Dirección</th>
+                {% else %}
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                {% endif %}
+
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for registro in pagina %}
+                <tr>
+                    {% if modulo == "productos" %}
+                        <td>{{ registro.codigo }}</td>
+                        <td>{{ registro.nombre }}</td>
+                        <td>{{ registro.categoria }}</td>
+                        <td>{{ registro.proveedor }}</td>
+                        <td>${{ registro.precio_unitario|floatformat:2 }}</td>
+                        <td>{{ registro.stock }}</td>
+                    {% elif modulo == "proveedores" %}
+                        <td>{{ registro.nit }}</td>
+                        <td>{{ registro.nombre }}</td>
+                        <td>{{ registro.telefono }}</td>
+                        <td>{{ registro.correo }}</td>
+                        <td>{{ registro.direccion|default:"Sin dirección" }}</td>
+                    {% else %}
+                        <td>{{ registro.nombre }}</td>
+                        <td>{{ registro.descripcion|default:"Sin descripción" }}</td>
+                    {% endif %}
+
+                    <td>{{ registro.get_estado_display }}</td>
+
+                    <td>
+                        <div class="d-flex gap-2">
+                            <a
+                                href="{% url 'inventario:editar' modulo=modulo pk=registro.pk %}"
+                                class="btn btn-sm btn-outline-primary"
+                            >
+                                Editar
+                            </a>
+
+                            <a
+                                href="{% url 'inventario:eliminar' modulo=modulo pk=registro.pk %}"
+                                class="btn btn-sm btn-outline-danger"
+                            >
+                                Eliminar
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                        No se encontraron registros.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p class="text-muted">
+    Total de registros encontrados: {{ pagina.paginator.count }}
+</p>
+
+{% if pagina.has_other_pages %}
+    <nav aria-label="Paginación del listado">
+        <ul class="pagination flex-wrap">
+            {% if pagina.has_previous %}
+                <li class="page-item">
+                    <a
+                        class="page-link"
+                        href="?page={{ pagina.previous_page_number }}&amp;q={{ busqueda|urlencode }}"
+                    >
+                        Anterior
+                    </a>
+                </li>
+            {% endif %}
+
+            <li class="page-item disabled">
+                <span class="page-link">
+                    Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if pagina.has_next %}
+                <li class="page-item">
+                    <a
+                        class="page-link"
+                        href="?page={{ pagina.next_page_number }}&amp;q={{ busqueda|urlencode }}"
+                    >
+                        Siguiente
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}
