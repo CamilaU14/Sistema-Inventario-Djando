@@ -1,0 +1,83 @@
+{% extends "inventario/base.html" %}
+
+{% block contenido %}
+<h1>Prueba de la API de productos</h1>
+<p>Consulta los productos y modifica el stock de un producto de prueba.</p>
+<form id="formulario" data-api="{% url 'inventario:api_productos' %}">
+    {% csrf_token %}
+    <label for="producto">Producto</label>
+    <select id="producto" required></select>
+    <label for="stock">Nuevo stock</label>
+    <input id="stock" type="number" min="0" step="1" required>
+    <button type="submit">Guardar stock</button>
+    <button type="button" id="consultar">Consultar productos</button>
+</form>
+<p id="mensaje" role="status"></p>
+<table class="table">
+    <thead><tr><th>Código</th><th>Nombre</th><th>Stock</th></tr></thead>
+    <tbody id="productos"></tbody>
+</table>
+<script>
+    const formulario = document.querySelector("#formulario");
+    const selector = document.querySelector("#producto");
+    const tabla = document.querySelector("#productos");
+    const mensaje = document.querySelector("#mensaje");
+
+    async function solicitar(url, opciones) {
+        const respuesta = await fetch(url, opciones);
+        const datos = respuesta.headers.get("content-type")?.includes("application/json")
+            ? await respuesta.json() : {};
+        if (!respuesta.ok) {
+            const detalle = datos.error || Object.values(datos.errores || {})
+                .flat().map(error => error.message).join(" ");
+            throw new Error(`HTTP ${respuesta.status}. ${detalle}`);
+        }
+        return datos;
+    }
+
+    async function consultar() {
+        const datos = await solicitar(formulario.dataset.api);
+        selector.replaceChildren();
+        tabla.replaceChildren();
+        for (const producto of datos.productos) {
+            selector.add(new Option(producto.nombre, producto.id));
+            const fila = tabla.insertRow();
+            for (const valor of [producto.codigo, producto.nombre, producto.stock]) {
+                fila.insertCell().textContent = valor;
+            }
+        }
+        mensaje.textContent = `Consulta completada. Productos: ${datos.productos.length}.`;
+    }
+
+    function mostrarError(error) {
+        mensaje.textContent = error.message;
+    }
+
+    formulario.addEventListener("submit", async evento => {
+        evento.preventDefault();
+        const boton = formulario.querySelector('button[type="submit"]');
+        boton.disabled = true;
+        try {
+            // PATCH cambia solo el stock. El token viene del formulario de Django.
+            const producto = await solicitar(`${formulario.dataset.api}${selector.value}/`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": formulario.elements.csrfmiddlewaretoken.value
+                },
+                body: JSON.stringify({ stock: document.querySelector("#stock").valueAsNumber })
+            });
+            await consultar();
+            selector.value = producto.id;
+            mensaje.textContent = `Stock actualizado. ${producto.nombre}: ${producto.stock}.`;
+        } catch (error) {
+            mostrarError(error);
+        } finally {
+            boton.disabled = false;
+        }
+    });
+
+    document.querySelector("#consultar").addEventListener("click", () => consultar().catch(mostrarError));
+    consultar().catch(mostrarError);
+</script>
+{% endblock %}
