@@ -90,6 +90,15 @@
                 >
                     Proveedores
                 </a>
+
+                {% if user.is_authenticated %}
+    <form method="post" action="{% url 'inventario:cerrar_sesion' %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-light btn-sm">
+            Cerrar sesión
+        </button>
+    </form>
+{% endif %}
             </div>
         </div>
     </nav>

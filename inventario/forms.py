@@ -1,4 +1,6 @@
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 
 from .models import Categoria, Proveedor, Producto
 
@@ -81,3 +83,13 @@ class ProductoForm(EstiloFormulario):
             ),
             "stock": forms.NumberInput(attrs={"min": "0"}),
         }
+
+        
+class RegistroUsuarioForm(UserCreationForm):
+    # Pedimos el nombre y el correo al crear una cuenta.
+    first_name = forms.CharField(label="Nombre", max_length=150)
+    email = forms.EmailField(label="Correo electrónico")
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ("first_name", "username", "email", "password1", "password2")

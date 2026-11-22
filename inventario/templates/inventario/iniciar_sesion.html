@@ -1,0 +1,16 @@
+{% extends "inventario/base.html" %}
+
+{% block contenido %}
+<h1>Iniciar sesión</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Entrar</button>
+</form>
+
+<p>
+    ¿Aún no tienes cuenta?
+    <a href="{% url 'inventario:registro' %}">Crear cuenta</a>
+</p>
+{% endblock %}

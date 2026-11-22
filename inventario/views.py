@@ -1,11 +1,12 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
-from .forms import CategoriaForm, ProductoForm, ProveedorForm
+from .forms import CategoriaForm, ProductoForm, ProveedorForm, RegistroUsuarioForm
 from .models import Categoria, Producto, Proveedor
 
 
@@ -46,6 +47,7 @@ def inicio(request):
     return redirect("inventario:listado", modulo="productos")
 
 
+@login_required(login_url="inventario:iniciar_sesion")
 @require_http_methods(["GET"])
 def listado(request, modulo):
     configuracion = obtener_modulo(modulo)
@@ -156,4 +158,21 @@ def eliminar(request, modulo, pk):
             "titulo": "Confirmar eliminación",
             "registro": registro,
         },
+    )
+
+
+def registrar_usuario(request):
+    if request.method == "POST":
+        # Validamos los datos que la persona envió desde el formulario.
+        formulario = RegistroUsuarioForm(request.POST)
+        if formulario.is_valid():
+            formulario.save()
+            return redirect("inventario:iniciar_sesion")
+    else:
+        formulario = RegistroUsuarioForm()
+
+    return render(
+        request,
+        "inventario/registro.html",
+        {"formulario": formulario},
     )
